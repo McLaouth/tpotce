@@ -3,7 +3,6 @@
 version: '2.3'
 
 networks:
-  cyberchef_local:
   spiderfoot_local:
 
 services:
@@ -11,17 +10,6 @@ services:
 ##################
 #### Tools
 ##################
-
-# Cyberchef service
-  cyberchef:
-    container_name: cyberchef
-    restart: always
-    networks:
-     - cyberchef_local
-    ports:
-     - "127.0.0.1:64299:8000"
-    image: "dtagdevsec/cyberchef:2006"
-    read_only: true
 
 #### ELK
 ## Elasticsearch service
@@ -44,7 +32,7 @@ services:
 #    mem_limit: 4g
     ports:
      - "127.0.0.1:64298:9200"
-    image: "dtagdevsec/elasticsearch:2006"
+    image: "dtagdevsec/elasticsearch:2203"
     volumes:
      - /data:/data
 
@@ -57,7 +45,7 @@ services:
         condition: service_healthy
     ports:
      - "127.0.0.1:64296:5601"
-    image: "dtagdevsec/kibana:2006"
+    image: "dtagdevsec/kibana:2203"
 
 ## Logstash service
   logstash:
@@ -72,54 +60,32 @@ services:
      - /opt/tpot/etc/compose/elk_environment
     ports:
      - "127.0.0.1:64305:80"
-    image: "dtagdevsec/logstash:2006"
+    image: "dtagdevsec/logstash:2203"
     volumes:
      - /data:/data
-
-## Elasticsearch-head service
-  head:
-    container_name: head
-    restart: always
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    ports:
-     - "127.0.0.1:64302:9100"
-    image: "dtagdevsec/head:2006"
-    read_only: true
 
 # Nginx service
   nginx:
     container_name: nginx
     restart: always
-    environment:
-    ### If set to YES all changes within Heimdall will remain for the next start
-    ### Make sure to uncomment the corresponding volume statements below, or the setting will prevent a successful start of T-Pot.
-     - HEIMDALL_PERSIST=NO
     tmpfs:
      - /var/tmp/nginx/client_body
      - /var/tmp/nginx/proxy
      - /var/tmp/nginx/fastcgi
      - /var/tmp/nginx/uwsgi
-     - /var/tmp/nginx/scgi 
+     - /var/tmp/nginx/scgi
      - /run
-     - /var/log/php7/
-     - /var/lib/nginx/tmp:uid=100,gid=82 
-     - /var/lib/nginx/html/storage/logs:uid=100,gid=82
-     - /var/lib/nginx/html/storage/framework/views:uid=100,gid=82
+     - /var/lib/nginx/tmp:uid=100,gid=82
     network_mode: "host"
     ports:
      - "64297:64297"
      - "127.0.0.1:64304:64304"
-    image: "dtagdevsec/nginx:2006"
+    image: "dtagdevsec/nginx:2203"
     read_only: true
     volumes:
      - /data/nginx/cert/:/etc/nginx/cert/:ro
      - /data/nginx/conf/nginxpasswd:/etc/nginx/nginxpasswd:ro
      - /data/nginx/log/:/var/log/nginx/
-    ### Enable the following volumes if you set HEIMDALL_PERSIST=YES
-    # - /data/nginx/heimdall/database:/var/lib/nginx/html/database
-    # - /data/nginx/heimdall/storage:/var/lib/nginx/html/storage
 
 # Spiderfoot service
   spiderfoot:
@@ -129,6 +95,6 @@ services:
      - spiderfoot_local
     ports:
      - "127.0.0.1:64303:8080"
-    image: "dtagdevsec/spiderfoot:2006"
+    image: "dtagdevsec/spiderfoot:2203"
     volumes:
-     - /data/spiderfoot/spiderfoot.db:/home/spiderfoot/spiderfoot.db
+     - /data/spiderfoot/spiderfoot.db:/home/spiderfoot/.spiderfoot/spiderfoot.db

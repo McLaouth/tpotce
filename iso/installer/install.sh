@@ -18,11 +18,11 @@ myCONF_FILE="/root/installer/iso.conf"
 myPROGRESSBOXCONF=" --backtitle "$myBACKTITLE" --progressbox 24 80"
 mySITES="https://ghcr.io https://github.com https://pypi.python.org https://debian.org"
 myTPOTCOMPOSE="/opt/tpot/etc/tpot.yml"
-myLSB_STABLE_SUPPORTED="stretch buster"
+myLSB_STABLE_SUPPORTED="buster bullseye"
 myLSB_TESTING_SUPPORTED="stable"
 myREMOTESITES="https://hub.docker.com https://github.com https://pypi.python.org https://debian.org https://listbot.sicherheitstacho.eu"
 myPREINSTALLPACKAGES="aria2 apache2-utils cracklib-runtime curl dialog figlet fuse grc libcrack2 libpq-dev lsb-release net-tools software-properties-common toilet"
-myINSTALLPACKAGES="aria2 apache2-utils apparmor apt-transport-https aufs-tools bash-completion build-essential ca-certificates cgroupfs-mount cockpit cockpit-docker console-setup console-setup-linux cracklib-runtime curl debconf-utils dialog dnsutils docker.io docker-compose ethtool fail2ban figlet genisoimage git glances grc haveged html2text htop iptables iw jq kbd libcrack2 libltdl7 libpam-google-authenticator man mosh multitail net-tools npm ntp openssh-server openssl pass pigz prips software-properties-common sshpass syslinux psmisc pv python3-pip toilet unattended-upgrades unzip vim wget wireless-tools wpasupplicant"
+myINSTALLPACKAGES="aria2 apache2-utils apparmor apt-transport-https bash-completion bat build-essential ca-certificates cgroupfs-mount cockpit console-setup console-setup-linux cracklib-runtime curl debconf-utils dialog dnsutils docker.io docker-compose ethtool fail2ban figlet genisoimage git grc haveged html2text htop iptables iw jq kbd libcrack2 libltdl7 libpam-google-authenticator man mosh multitail net-tools neovim npm ntp openssh-server openssl pass pigz prips software-properties-common sshpass psmisc pv python3-pip toilet unattended-upgrades unzip wget wireless-tools wpasupplicant"
 myINFO="\
 ###########################################
 ### T-Pot Installer for Debian (Stable) ###
@@ -172,9 +172,6 @@ myCRONJOBS="
 # Check if updated images are available and download them
 $myRANDOM_MINUTE $myPULL_HOUR * * *      root    docker-compose -f /opt/tpot/etc/tpot.yml pull
 
-# Delete elasticsearch logstash indices older than 90 days
-$myRANDOM_MINUTE $myDEL_HOUR * * *      root    curator --config /opt/tpot/etc/curator/curator.yml /opt/tpot/etc/curator/actions.yml
-
 # Uploaded binaries are not supposed to be downloaded
 */1 * * * *     root    mv --backup=numbered /data/dionaea/roots/ftp/* /data/dionaea/binaries/
 
@@ -312,7 +309,7 @@ function fuGET_DEPS {
   echo "### Removing and holding back problematic packages ..."
   apt-fast -y purge exim4-base mailutils pcp cockpit-pcp elasticsearch-curator
   apt-fast -y autoremove
-  apt-mark hold exim4-base mailutils pcp cockpit-pcp elasticsearch-curator
+  apt-mark hold exim4-base mailutils pcp cockpit-pcp
 }
 
 # Check for other services
@@ -439,6 +436,16 @@ if [ -s "$myTPOT_CONF_FILE" ] && [ "$myTPOT_CONF_FILE" != "" ];
 fi
 
 # Prepare running the installer
+myUSERCHECK=$(grep "tpot" /etc/passwd | wc -l)
+if [ "$myUSERCHECK" -gt "0" ];
+  then
+    echo "### The user name \"tpot\" already exists. The tpot username and group may not previously exist or T-Pot will not work."
+    echo "### We recommend a fresh install according to the T-Pot Readme Post-Install method."
+    echo
+    echo "Aborting."
+    echo
+    exit 0
+fi
 echo "$myINFO" | head -n 3
 fuCHECK_PORTS
 
@@ -683,17 +690,18 @@ echo "$myNETWORK_WLANEXAMPLE" | tee -a /etc/network/interfaces
 fuBANNER "SSH roaming off"
 echo "UseRoaming no" | tee -a /etc/ssh/ssh_config
 
-# Installing elasticdump, elasticsearch-curator, yq
+# Installing elasticdump, yq
 fuBANNER "Installing pkgs"
 npm install elasticdump -g
-pip3 install elasticsearch-curator yq
+pip3 install yq
 hash -r
 
 # Cloning T-Pot from GitHub
 if ! [ "$myTPOT_DEPLOYMENT_TYPE" == "iso" ];
   then
     fuBANNER "Cloning T-Pot"
-    git clone https://github.com/telekom-security/tpotce /opt/tpot
+    ### DEV
+    git clone https://github.com/telekom-security/tpotce -b 22.x /opt/tpot
 fi
 
 # Let's create the T-Pot user
@@ -824,7 +832,6 @@ mkdir -vp /data/adbhoney/{downloads,log} \
          /data/hellpot/log \
          /data/heralding/log \
          /data/honeypots/log \
-         /data/honeypy/log \
          /data/honeysap/log \
          /data/ipphoney/log \
          /data/log4pot/{log,payloads} \

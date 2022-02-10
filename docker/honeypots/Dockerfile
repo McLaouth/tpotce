@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.15
 #
 # Include dist
 ADD dist/ /root/dist/
@@ -28,10 +28,9 @@ RUN apk -U add \
     mkdir -p /opt \
              /var/log/honeypots && \
     cd /opt/ && \
-    #git clone https://github.com/qeeqbox/honeypots && \
-    git clone https://github.com/t3chn0m4g3/honeypots && \
+    git clone https://github.com/qeeqbox/honeypots && \
     cd honeypots && \
-    #git checkout 7c654a3ef2c564ae6f1247bf302d652037080163 && \
+    git checkout b88cbbd5aa1d2724c6f7de5d723f0d0e753912bb && \
     pip3 install --upgrade pip && \
     pip3 install --ignore-installed hiredis packaging && \
     pip3 install . && \
@@ -61,5 +60,4 @@ RUN apk -U add \
 STOPSIGNAL SIGINT
 USER honeypots:honeypots
 WORKDIR /opt/honeypots/
-CMD python3 -m honeypots --setup all --config config.json
-#CMD python3 -m honeypots --setup telnet --config config.json
+CMD python3 -E -m honeypots --setup all --config config.json
